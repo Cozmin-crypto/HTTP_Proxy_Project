@@ -1,6 +1,6 @@
 Proiect PSO: HTTP Proxy în C
 Scopul proiectului
-Proiectul meu este un proxy HTTP făcut în C, care rulează pe Linux într-o mașină virtuală. Practic stă între browser și internet: ia cererea de la browser, mă lasă să mă uit la ea și să o modific, apoi o trimite mai departe la server. La fel se întâmplă și cu răspunsul care vine înapoi.
+Proiectul este un proxy HTTP făcut în C, care rulează pe Linux într-o mașină virtuală. Practic stă între browser și internet: ia cererea de la browser, mă lasă să mă uit la ea și să o modific, apoi o trimite mai departe la server. La fel se întâmplă și cu răspunsul care vine înapoi.
 Trebuie să pot intercepta traficul HTTP, să editez headerele și conținutul și să am reguli de modificare a conținutului (filtre și schimbarea link-urilor).
 Ce trebuie să facă aplicația
 Cerintele:
