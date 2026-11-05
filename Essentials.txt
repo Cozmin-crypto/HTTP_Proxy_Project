@@ -1,0 +1,11 @@
+Testare: 3 terminale
+
+
+terminal 1:  python3 -m http.server 9000 --bind 127.0.0.1 (trebuie instalat python 3)
+            --cream cu ajutorul lui python pornim un server web cu portul 9000
+terminal 2: make
+            ./proxy 8080 127.0.0.1 9000 
+        --asculta pe 127.0.0.1 : 8080, conecteaza mai departe 127.0.0.1:9000
+
+terminal 3: echo | nc 127.0.0.1 8080 
+        --clientul care se conecteaza la server proxy 
