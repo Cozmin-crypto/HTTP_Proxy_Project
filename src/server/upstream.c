@@ -3,8 +3,11 @@
 #include <netdb.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#include "common/http.h"
 
 int upstream_connect(const char *host, int port)
 {
@@ -37,4 +40,43 @@ int upstream_connect(const char *host, int port)
 
     freeaddrinfo(res);
     return fd;
+}
+
+/* ---- Etapa 1: trimite cererea la server si citeste raspunsul ----
+   Cererea se trimite cu Connection: close, iar raspunsul se citeste pana inchide serverul.
+   Body-ul ramane exact cum a venit; parsarea completa (chunked etc.) vine in Etapa 2. */
+int upstream_fetch(HttpRequest *req, HttpResponse *resp) {
+    int fd = upstream_connect(req->host, req->port);
+    if (fd < 0) return UPSTREAM_ERR_CONNECT;
+
+    /* transforma cererea in text HTTP si o trimite */
+    size_t n;
+    char *msg = http_serialize_request(req, &n);
+    if (!msg) { close(fd); return UPSTREAM_ERR; }
+    int rc = send_all(fd, msg, n);
+    free(msg);
+    if (rc < 0) { close(fd); return UPSTREAM_ERR; }
+
+    Reader r;
+    reader_init(&r, fd);
+
+    /* linia de status: "HTTP/1.1 200 OK" */
+    char line[1024];
+    if (reader_read_line(&r, line, sizeof line) < 0) { close(fd); return UPSTREAM_ERR; }
+
+    char version[16];
+    if (sscanf(line, "%15s %d %127[^\n]", version, &resp->status_code, resp->reason) < 2) {
+        close(fd);
+        return UPSTREAM_ERR;
+    }
+    snprintf(resp->version, sizeof resp->version, "%s", version);
+
+    /* headerele, apoi body-ul pana la inchiderea conexiunii */
+    if (http_read_headers(&r, resp->headers, &resp->header_count) < 0 ||
+        http_read_until_close(&r, &resp->body, &resp->body_len) < 0) {
+        close(fd);
+        return UPSTREAM_ERR;
+    }
+    close(fd);
+    return UPSTREAM_OK;
 }
